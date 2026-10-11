@@ -1,58 +1,108 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel–Python AI Bridge
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A foundational integration project that demonstrates how a Laravel web application can communicate with a separate Python service to run specialized logic and receive structured results through a local HTTP API.
 
-## About Laravel
+The goal is to establish a clean connection between a web application and a Python-based engine that can later be extended with advanced AI, data analysis, and machine learning capabilities.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Why Connect Laravel and Python?
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Laravel and Python serve different responsibilities in this architecture:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Laravel** manages the web application, user-facing pages, product CRUD, request validation, and the main connection to the database.
+- **Python** runs separately as a service for logic that benefits from Python's ecosystem, such as data analysis, prediction, anomaly detection, and future machine learning models.
+- **The API bridge** carries requests and responses between the two services using JSON over HTTP.
 
-## Learning Laravel
+This separation allows Python capabilities to be added without rebuilding the Laravel application or moving its core business operations into another language.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+> Using Python does not automatically make an AI system more accurate or intelligent. The quality of its results depends on the algorithms, models, data, evaluation, and implementation.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Architecture
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```text
+User / Browser
+      |
+      v
+Laravel Web Application
+- Product CRUD
+- Input validation
+- Database access
+- Calls the Python service
+      |
+      | HTTP request with JSON
+      v
+Python API Service (FastAPI)
+- Receives structured data
+- Runs the requested logic
+- Returns structured results
+      |
+      | HTTP response with JSON
+      v
+Laravel processes and displays the result
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+In the local development setup, Laravel and Python run as separate processes on the same computer. They communicate over `127.0.0.1`, so a public host or domain is not required.
 
-## Contributing
+## Current Demonstration
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+This repository uses a simple Point of Sale (POS) product-management page to demonstrate the connection.
 
-## Code of Conduct
+### Laravel side
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- Creates, reads, updates, and deletes product records.
+- Stores product data in MySQL.
+- Sends the product ID, name, current stock, and minimum stock to Python.
+- Receives the analysis response and displays the result on the product page.
+- Keeps product CRUD available if the Python service is temporarily unavailable.
 
-## Security Vulnerabilities
+### Python side
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Exposes a health endpoint to indicate whether the service is reachable.
+- Accepts product stock data through an API endpoint.
+- Returns a status and recommendation for each product.
+- Uses a small **rule-based demonstration**, not a trained AI or machine learning model.
 
-## License
+## API Responsibilities
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Lets the application or developer check whether the Python service is online. |
+| `POST /analyze-stocks` | Receives product stock data and returns stock-status analysis. |
+
+The request and response use JSON. Laravel initiates the request; Python does not continuously push data to Laravel. Python waits for requests and responds when called.
+
+## Example Data Flow
+
+1. A user opens the product list in the Laravel application.
+2. Laravel reads the products from MySQL.
+3. Laravel sends the relevant stock fields to the Python API as JSON.
+4. Python processes the submitted data and returns a result for each product.
+5. Laravel associates the results with the products and renders them in the website.
+
+For the current demo, Python labels a product as `Habis`, `Menipis`, or `Aman` based on the current stock and minimum-stock threshold. This demonstrates the connection and data exchange, rather than advanced AI reasoning.
+
+## Potential Extensions
+
+The bridge can serve as a foundation for more advanced capabilities, for example:
+
+- Sales-demand forecasting based on historical transactions.
+- Stockout risk estimation and replenishment recommendations.
+- Detection of unusual stock or sales patterns.
+- Data analysis using Python libraries.
+- Machine learning models exposed through API endpoints.
+- Additional AI tools coordinated by Laravel's application logic.
+
+These are future directions, not features implemented by the current demonstration.
+
+## Design Principles
+
+- **Separation of responsibilities:** Laravel remains the web application and business-workflow layer; Python provides specialized processing.
+- **Structured communication:** services exchange explicit JSON payloads and responses.
+- **Local-first development:** the integration can be tested without public hosting.
+- **Graceful degradation:** failure of the Python service should not unnecessarily disable unrelated Laravel functionality.
+- **Controlled execution:** database writes and important business operations should remain validated and authorized by Laravel, rather than being executed blindly from AI output.
+
+## Project Status
+
+This is a learning-oriented proof of concept for Laravel-to-Python API connectivity. The current stock analysis uses basic rules. It is not yet a production AI platform, and it does not currently implement deep learning or a trained machine learning model.
+
+The main objective is to provide a working architectural foundation on which more advanced Python logic can be developed and integrated deliberately.
